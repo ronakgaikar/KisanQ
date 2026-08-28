@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 font-sans antialiased min-h-screen flex flex-col;
+  }
+}
+
+.bg-emerald-gradient {
+  background: linear-gradient(135deg, #065f46 0%, #047857 50%, #059669 100%);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
