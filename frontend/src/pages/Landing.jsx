@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Sprout, Clock, ShieldCheck, TrendingUp, AlertTriangle, ArrowRight, CheckCircle, Smartphone, Award, BarChart2 } from 'lucide-react';
-import Footer from '../components/Footer';
 
 const Landing = () => {
   return (
@@ -160,7 +159,6 @@ const Landing = () => {
         </div>
       </section>
 
-      <Footer />
     </div>
   );
 };

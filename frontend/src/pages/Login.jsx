@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Sprout, Lock, Phone, ArrowRight, ShieldCheck, UserCheck, KeyRound } from 'lucide-react';
-import Footer from '../components/Footer';
 
 const Login = () => {
   const [mobileNumber, setMobileNumber] = useState('');
@@ -144,7 +143,6 @@ const Login = () => {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 };
