@@ -56,14 +56,45 @@ def register_farmer(user_data: UserRegister, db: Session = Depends(get_db)):
         "name": new_user.name
     }
 
-@router.post("/login", response_model=Token)
-def login(login_data: UserLogin, db: Session = Depends(get_db)):
-    mobile = login_data.mobile_number.strip()
-    pwd = login_data.password.strip()
+from fastapi import Request
 
-    user = db.query(User).filter(User.mobile_number == mobile).first()
-    if not user or not verify_password(pwd, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid mobile number or password.")
+@router.post("/login", response_model=Token)
+async def login(request: Request, db: Session = Depends(get_db)):
+    mobile = None
+    pwd = None
+
+    content_type = request.headers.get("content-type", "")
+
+    if "application/json" in content_type:
+        try:
+            data = await request.json()
+            mobile = data.get("mobile_number") or data.get("username")
+            pwd = data.get("password")
+        except Exception:
+            pass
+    else:
+        try:
+            form = await request.form()
+            mobile = form.get("username") or form.get("mobile_number")
+            pwd = form.get("password")
+        except Exception:
+            pass
+
+    if not mobile or not pwd:
+        raise HTTPException(
+            status_code=400,
+            detail="Mobile number/username and password are required."
+        )
+
+    mobile_str = str(mobile).strip()
+    pwd_str = str(pwd).strip()
+
+    user = db.query(User).filter(User.mobile_number == mobile_str).first()
+    if not user or not verify_password(pwd_str, user.password_hash):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid mobile number or password."
+        )
 
     access_token = create_access_token(data={"sub": str(user.id), "role": user.role})
     return {
