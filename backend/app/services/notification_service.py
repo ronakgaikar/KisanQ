@@ -30,6 +30,9 @@ class NotificationService:
         Modular SMS notification stub.
         Designed for future integration with Telecom APIs / SMS Gateways without modifying core business logic.
         """
-        # Current scope: In-App only. SMS stub logs attempt.
-        print(f"[FUTURE SMS STUB] To: {mobile_number} | Message: {message}")
+        try:
+            print(f"[FUTURE SMS STUB] To: {mobile_number} | Message: {message}")
+        except Exception:
+            clean_msg = message.encode("ascii", "ignore").decode("ascii")
+            print(f"[FUTURE SMS STUB] To: {mobile_number} | Message: {clean_msg}")
         return True

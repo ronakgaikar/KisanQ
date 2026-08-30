@@ -10,26 +10,31 @@ from app.services.notification_service import NotificationService
 
 router = APIRouter(prefix="/api/payments", tags=["Payment Tracking"])
 
+@router.get("", response_model=List[PaymentResponse])
 @router.get("/my", response_model=List[PaymentResponse])
-def get_my_payments(
-    current_user: User = Depends(require_role(["FARMER"])),
+def get_payments_list(
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    farmer = db.query(Farmer).filter(Farmer.user_id == current_user.id).first()
-    if not farmer:
-        return []
-
-    payments = db.query(Payment).join(Procurement).join(Booking).filter(
-        Booking.farmer_id == farmer.id
-    ).order_by(Payment.id.desc()).all()
+    if current_user.role == "FARMER":
+        farmer = db.query(Farmer).filter(Farmer.user_id == current_user.id).first()
+        if not farmer:
+            return []
+        payments = db.query(Payment).join(Procurement).join(Booking).filter(
+            Booking.farmer_id == farmer.id
+        ).order_by(Payment.id.desc()).all()
+    else:
+        # Operators and Admins see all payment records
+        payments = db.query(Payment).order_by(Payment.id.desc()).all()
 
     results = []
     for p in payments:
-        b = p.procurement.booking if p.procurement else None
+        b = p.procurement.booking if p and p.procurement else None
+        farmer_name = b.farmer.user.name if b and b.farmer and b.farmer.user else "Farmer"
         results.append({
             "id": p.id,
             "procurement_id": p.procurement_id,
-            "farmer_name": current_user.name,
+            "farmer_name": farmer_name,
             "amount": p.amount,
             "status": p.status,
             "transaction_id": p.transaction_id,

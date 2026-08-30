@@ -9,11 +9,28 @@ DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:@localhost:3306/k
 SQLITE_FALLBACK_URL = "sqlite:///./kisanq.db"
 
 def get_engine():
-    # Attempt MySQL first if configured
-    if DATABASE_URL.startswith("mysql"):
+    if DATABASE_URL and DATABASE_URL.startswith("mysql"):
+        # 1. Direct connection attempt (for Aiven MySQL / Cloud DBs)
         try:
-            # Parse host/user to auto-create database if not exists
-            # Connect to MySQL server without db name to ensure 'kisanq' DB exists
+            connect_args = {}
+            if "aiven" in DATABASE_URL.lower() or "ssl" in DATABASE_URL.lower():
+                connect_args = {"ssl": {"ssl_mode": "PREFERRED"}}
+
+            engine = create_engine(
+                DATABASE_URL,
+                pool_pre_ping=True,
+                pool_recycle=3600,
+                connect_args=connect_args
+            )
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            print(f"[DB] Connected to MySQL database via DATABASE_URL successfully.")
+            return engine
+        except Exception as e1:
+            print(f"[DB Notice] Direct MySQL connection check: {e1}")
+
+        # 2. Localhost fallback with DB creation
+        try:
             from urllib.parse import urlparse
             url = urlparse(DATABASE_URL)
             db_name = url.path.lstrip('/') or "kisanq"
@@ -26,19 +43,14 @@ def get_engine():
             server_engine = create_engine(server_url, isolation_level="AUTOCOMMIT")
             with server_engine.connect() as conn:
                 conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {db_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"))
-            
-            engine = create_engine(
-                DATABASE_URL,
-                pool_pre_ping=True,
-                pool_recycle=3600
-            )
-            # Quick connectivity check
+
+            engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=3600)
             with engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
-            print(f"[DB] Connected to MySQL database '{db_name}' successfully.")
+            print(f"[DB] Connected to local MySQL database '{db_name}'.")
             return engine
-        except Exception as e:
-            print(f"[DB Warning] MySQL connection failed ({e}). Falling back to SQLite: {SQLITE_FALLBACK_URL}")
+        except Exception as e2:
+            print(f"[DB Warning] MySQL connection failed. Falling back to SQLite: {SQLITE_FALLBACK_URL}")
 
     # Fallback to SQLite
     engine = create_engine(

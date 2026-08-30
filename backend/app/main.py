@@ -1,11 +1,23 @@
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import engine, Base
+from app.database import engine, Base, SessionLocal
+from app.models import User
 from app.routes import auth, farmers, centres, crops, slots, bookings, queue, procurement, payments, notifications, dashboard
 
 # Create database tables automatically
 Base.metadata.create_all(bind=engine)
+
+# Auto-seed database if empty (e.g. fresh Aiven MySQL database on Render)
+try:
+    db = SessionLocal()
+    if db.query(User).first() is None:
+        print("[STARTUP] Database is empty. Auto-seeding KisanQ demo dataset...")
+        from seed import seed_database
+        seed_database()
+    db.close()
+except Exception as e:
+    print(f"[STARTUP DB NOTICE] {e}")
 
 app = FastAPI(
     title="KisanQ API - Smart Farmer Procurement Management Platform",
@@ -45,4 +57,6 @@ def read_root():
     }
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    import os
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)

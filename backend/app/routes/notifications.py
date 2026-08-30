@@ -10,9 +10,12 @@ router = APIRouter(prefix="/api/notifications", tags=["Notifications"])
 
 @router.get("", response_model=List[NotificationResponse])
 def get_farmer_notifications(
-    current_user: User = Depends(require_role(["FARMER"])),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    if current_user.role != "FARMER":
+        return []
+
     farmer = db.query(Farmer).filter(Farmer.user_id == current_user.id).first()
     if not farmer:
         return []

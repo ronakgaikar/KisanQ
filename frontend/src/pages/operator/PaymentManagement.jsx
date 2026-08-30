@@ -12,14 +12,10 @@ const PaymentManagement = () => {
   }, []);
 
   const fetchPayments = () => {
-    // Fetch all bookings with procurement and payment
-    api.get('/dashboard/admin').then(() => {
-      // In operator mode, fetch procurement list
-      api.get('/dashboard/operator?centre_id=1').then(() => {
-        // Fetch payment records
-        api.get('/payments/my').then(res => setPayments(res.data)).catch(() => {});
-      });
-    }).finally(() => setLoading(false));
+    api.get('/payments')
+      .then(res => setPayments(res.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   };
 
   const handleUpdateStatus = (id, newStatus) => {
